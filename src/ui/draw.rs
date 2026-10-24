@@ -44,15 +44,11 @@ pub enum ToolbarItem {
 pub struct Toolbar {
     pub panel: Rect,
     pub items: Vec<(ToolbarItem, Rect, String, &'static str)>,
-    pub hint: (f64, f64),
 }
 
 const BUTTON_H: f64 = 32.0;
 const LABEL_PX: f32 = 14.0;
 const KEY_PX: f32 = 11.0;
-const HINT_PX: f32 = 12.0;
-pub const HINT: &str =
-    "Drag a region · click a window · F whole screen · Enter capture · Esc cancel";
 
 impl Toolbar {
     pub fn layout(text: &Text, surface_width: f64, delay_secs: u64) -> Toolbar {
@@ -71,13 +67,12 @@ impl Toolbar {
         let gap = 6.0;
         let pad = 6.0;
         let inner = widths.iter().sum::<f64>() + gap * (widths.len() - 1) as f64;
-        let hint_w = text.width(HINT, HINT_PX) as f64 + 24.0;
-        let panel_w = (inner + pad * 2.0).max(hint_w);
+        let panel_w = inner + pad * 2.0;
         let panel = Rect::new(
             ((surface_width - panel_w) / 2.0).round(),
             20.0,
             panel_w,
-            BUTTON_H + pad * 2.0 + 22.0,
+            BUTTON_H + pad * 2.0,
         );
         let mut x = panel.x + (panel_w - inner) / 2.0;
         let items = entries
@@ -89,11 +84,7 @@ impl Toolbar {
                 (item, r, label, key)
             })
             .collect();
-        let hint = (
-            panel.x + (panel_w - hint_w) / 2.0 + 12.0,
-            panel.bottom() - 9.0,
-        );
-        Toolbar { panel, items, hint }
+        Toolbar { panel, items }
     }
 
     pub fn hit(&self, p: (f64, f64)) -> Option<ToolbarItem> {
@@ -261,7 +252,7 @@ fn size_label(target: &mut Pixmap, text: &Text, sel: &Rect, view: &OverlayView) 
         r.y = sel.bottom() - h - 6.0;
         r.x += 6.0;
     }
-    if let Some(rect) = sk_rect(&r, view.origin, s).and_then(|r| rounded(r, 6.0 * s as f32)) {
+    if let Some(rect) = sk_rect(&r, view.origin, s).and_then(|r| rounded(r, 3.0 * s as f32)) {
         target.fill_path(
             &rect,
             &paint(panel()),
@@ -285,7 +276,7 @@ fn toolbar(target: &mut Pixmap, text: &Text, view: &OverlayView) {
     let s = view.scale;
     let local = (0.0, 0.0);
     let bar = view.toolbar;
-    if let Some(shape) = sk_rect(&bar.panel, local, s).and_then(|r| rounded(r, 12.0 * s as f32)) {
+    if let Some(shape) = sk_rect(&bar.panel, local, s).and_then(|r| rounded(r, 4.0 * s as f32)) {
         target.fill_path(
             &shape,
             &paint(panel()),
@@ -310,7 +301,7 @@ fn toolbar(target: &mut Pixmap, text: &Text, view: &OverlayView) {
             ToolbarItem::Mode(m) => *m == view.mode,
             ToolbarItem::Delay => view.delay,
         };
-        if on && let Some(btn) = sk_rect(r, local, s).and_then(|r| rounded(r, 8.0 * s as f32)) {
+        if on && let Some(btn) = sk_rect(r, local, s).and_then(|r| rounded(r, 3.0 * s as f32)) {
             let fill = if *item == ToolbarItem::Mode(Mode::Image) || *item == ToolbarItem::Delay {
                 accent()
             } else {
@@ -342,15 +333,6 @@ fn toolbar(target: &mut Pixmap, text: &Text, view: &OverlayView) {
         let kx = x + text.width(label, ls) + 8.0 * s as f32;
         text.draw(target, key, kx, baseline, ks, key_fg);
     }
-    let hs = HINT_PX * s as f32;
-    text.draw(
-        target,
-        HINT,
-        (bar.hint.0 * s) as f32,
-        (bar.hint.1 * s) as f32,
-        hs,
-        dim_text(),
-    );
 }
 
 /// The recording pill's logical size.
@@ -365,7 +347,7 @@ pub fn pill(target: &mut Pixmap, text: &Text, scale: f64, elapsed_secs: u64, lab
     target.fill(Color::TRANSPARENT);
     let s = scale;
     let body = Rect::new(0.0, 0.0, PILL.0 as f64, PILL.1 as f64);
-    if let Some(p) = sk_rect(&body, (0.0, 0.0), s).and_then(|r| rounded(r, 20.0 * s as f32)) {
+    if let Some(p) = sk_rect(&body, (0.0, 0.0), s).and_then(|r| rounded(r, 4.0 * s as f32)) {
         target.fill_path(
             &p,
             &paint(panel()),
@@ -400,7 +382,7 @@ pub fn pill(target: &mut Pixmap, text: &Text, scale: f64, elapsed_secs: u64, lab
         text_color(),
     );
     let stop = pill_stop_button();
-    if let Some(p) = sk_rect(&stop, (0.0, 0.0), s).and_then(|r| rounded(r, 8.0 * s as f32)) {
+    if let Some(p) = sk_rect(&stop, (0.0, 0.0), s).and_then(|r| rounded(r, 3.0 * s as f32)) {
         target.fill_path(
             &p,
             &paint(Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x1E)),
