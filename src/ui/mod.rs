@@ -88,6 +88,9 @@ pub fn select(instance: &Instance, mode: Mode, delay_secs: u64) -> Result<(Vec<S
 
     let mut shots = Vec::new();
     let mut wl_outputs = Vec::new();
+    // Frozen frames are what images crop, so they leave the cursor out; it
+    // comes back before the overlay appears, for selecting.
+    let hidden = crate::cursor::hide();
     for output in app.output_state.outputs() {
         let Some(info) = app.output_state.info(&output) else {
             continue;
@@ -106,6 +109,7 @@ pub fn select(instance: &Instance, mode: Mode, delay_secs: u64) -> Result<(Vec<S
         shots.push(Shot { geometry, frame });
         wl_outputs.push(output);
     }
+    drop(hidden);
     if shots.is_empty() {
         bail!("the compositor reported no outputs");
     }

@@ -3,6 +3,7 @@
 mod capture;
 mod clip;
 mod config;
+mod cursor;
 mod geom;
 mod hypr;
 mod ipc;
@@ -195,7 +196,10 @@ fn capture_region(
     let dir = config.output_dir();
     if mode == Mode::Image {
         let path = capture::timestamped(&dir, "png")?;
-        capture::grab_region(region, &path)?;
+        {
+            let _hidden = cursor::hide();
+            capture::grab_region(region, &path)?;
+        }
         return Ok(path);
     }
     let mp4 = capture::timestamped(&dir, "mp4")?;
